@@ -1,24 +1,31 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from contextlib import contextmanager
 
-Base = declarative_base()
+from data.models import *
+
 
 
 class DatabaseManager:
     def __init__(self, connection_string='sqlite:///ANSDatabase.db'):
         self.engine = create_engine(connection_string)
-        self._enable_foreign_keys()
+        self.session = sessionmaker(autocommit=False,
+                                          autoflush=False,
+                                          bind=self.engine,
+                                          expire_on_commit=False
+                                          )
         Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
 
-    def _enable_foreign_keys(self):
-        @event.listens_for(self.engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            if isinstance(dbapi_connection, SQLite3Connection):
-                cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA foreign_keys=ON")
-                cursor.close()
-
+    @contextmanager
     def get_session(self):
-        return self.Session()
+        session = self.session()
+        try:
+            yield session
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+db = DatabaseManager()

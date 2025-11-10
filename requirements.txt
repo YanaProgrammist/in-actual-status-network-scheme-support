@@ -1,5 +1,7 @@
+pydantic
+dash-cytoscape
+dash-bootstrap-components
 dash>=2.0.0
 plotly>=5.0.0
 pandas>=1.0.0
-flask>=2.0.0
 sqlalchemy>=1.4.0
